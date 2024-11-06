@@ -1,11 +1,7 @@
-#include <WiFi.h>
+#include <WiFiManager.h>
 #include <SPIFFS.h>
 #include "Update.h"
 #include <WiFiClientSecure.h>
-
-// Define WiFi credentials
-#define ssid "SSID"
-#define password "PASSWORD"
 
 // Define server details and file path
 #define HOST "raw.githubusercontent.com"
@@ -14,6 +10,8 @@
 
 // Define the name for the downloaded firmware file
 #define FILE_NAME "firmware.bin"
+WiFiManager wm;
+
 
 void setup() {
   Serial.begin(115200);
@@ -22,8 +20,7 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-
-  connectToWiFi();
+  wm.autoConnect("ControlPanel","12345678");
   getFileFromServer();
   performOTAUpdateFromSPIFFS();
 }
@@ -31,24 +28,6 @@ void setup() {
 void loop() {
   // Nothing to do here
 }
-
-void connectToWiFi() {
-  // Begin connecting to WiFi using the provided SSID and password
-  WiFi.begin(ssid, password);
-
-  // Display connection progress
-  Serial.print("Connecting to WiFi");
-  
-  // Wait until WiFi is connected
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  
-  // Print confirmation message when WiFi is connected
-  Serial.println("WiFi connected");
-}
-
 
 void getFileFromServer() {
   WiFiClientSecure client;
