@@ -20,7 +20,7 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-  wm.autoConnect("ControlPanel","12345678");
+  wm.autoConnect("TP-link_78","0974416906");
   getFileFromServer();
   performOTAUpdateFromSPIFFS();
 }
