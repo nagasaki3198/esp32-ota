@@ -4,14 +4,14 @@
 #include <WiFiClientSecure.h>
 
 // Define server details and file path
-#define HOST "2"
-#define PATH "1"
+#define HOST "raw.githubusercontent.com"
+#define PATH "/nagasaki3198/esp32-ota/DEV/firmware/esp32-ota.ino.bin"
 #define PORT 443
 
 // Define the name for the downloaded firmware file
-#define FILE_NAME "firmware.bin"
+#define FILE_NAME "esp32-ota.ino.bin"
 WiFiManager wm;
-
+bool res = false;
 
 void setup() {
   Serial.begin(115200);
@@ -20,9 +20,11 @@ void setup() {
     Serial.println("SPIFFS Mount Failed");
     return;
   }
-  wm.autoConnect("TP-link_78","0974416906");
-  getFileFromServer();
-  performOTAUpdateFromSPIFFS();
+  res = wm.autoConnect("AP_point");
+  if (res) {
+    getFileFromServer();
+    performOTAUpdateFromSPIFFS();
+  }
 }
 
 void loop() {
@@ -31,16 +33,16 @@ void loop() {
 
 void getFileFromServer() {
   WiFiClientSecure client;
-  client.setInsecure(); // Set client to allow insecure connections
+  client.setInsecure();  // Set client to allow insecure connections
 
-  if (client.connect(HOST, PORT)) { // Connect to the server
+  if (client.connect(HOST, PORT)) {  // Connect to the server
     Serial.println("Connected to server");
-    client.print("GET " + String(PATH) + " HTTP/1.1\r\n"); // Send HTTP GET request
-    client.print("Host: " + String(HOST) + "\r\n"); // Specify the host
-    client.println("Connection: close\r\n"); // Close connection after response
-    client.println(); // Send an empty line to indicate end of request headers
+    client.print("GET " + String(PATH) + " HTTP/1.1\r\n");  // Send HTTP GET request
+    client.print("Host: " + String(HOST) + "\r\n");         // Specify the host
+    client.println("Connection: close\r\n");                // Close connection after response
+    client.println();                                       // Send an empty line to indicate end of request headers
 
-    File file = SPIFFS.open("/" + String(FILE_NAME), FILE_WRITE); // Open file in SPIFFS for writing
+    File file = SPIFFS.open("/" + String(FILE_NAME), FILE_WRITE);  // Open file in SPIFFS for writing
     if (!file) {
       Serial.println("Failed to open file for writing");
       return;
@@ -49,7 +51,7 @@ void getFileFromServer() {
     bool endOfHeaders = false;
     String headers = "";
     String http_response_code = "error";
-    const size_t bufferSize = 1024; // Buffer size for reading data
+    const size_t bufferSize = 1024;  // Buffer size for reading data
     uint8_t buffer[bufferSize];
 
     // Loop to read HTTP response headers
@@ -60,26 +62,25 @@ void getFileFromServer() {
         if (headers.startsWith("HTTP/1.1")) {
           http_response_code = headers.substring(9, 12);
         }
-        if (headers.endsWith("\r\n\r\n")) { // Check for end of headers
+        if (headers.endsWith("\r\n\r\n")) {  // Check for end of headers
           endOfHeaders = true;
         }
       }
     }
 
-    Serial.println("HTTP response code: " + http_response_code); // Print received headers
+    Serial.println("HTTP response code: " + http_response_code);  // Print received headers
 
     // Loop to read and write raw data to file
     while (client.connected()) {
       if (client.available()) {
         size_t bytesRead = client.readBytes(buffer, bufferSize);
-        file.write(buffer, bytesRead); // Write data to file
+        file.write(buffer, bytesRead);  // Write data to file
       }
     }
-    file.close(); // Close the file
-    client.stop(); // Close the client connection
+    file.close();   // Close the file
+    client.stop();  // Close the client connection
     Serial.println("File saved successfully");
-  }
-  else {
+  } else {
     Serial.println("Failed to connect to server");
   }
 }
@@ -93,7 +94,7 @@ void performOTAUpdateFromSPIFFS() {
   }
 
   Serial.println("Starting update..");
-  size_t fileSize = file.size(); // Get the file size
+  size_t fileSize = file.size();  // Get the file size
   Serial.println(fileSize);
 
   // Begin OTA update process with specified size and flash destination
@@ -108,14 +109,13 @@ void performOTAUpdateFromSPIFFS() {
   // Complete the OTA update process
   if (Update.end()) {
     Serial.println("Successful update");
-  }
-  else {
+  } else {
     Serial.println("Error Occurred:" + String(Update.getError()));
     return;
   }
 
-  file.close(); // Close the file
+  file.close();  // Close the file
   Serial.println("Reset in 4 seconds....");
   delay(4000);
-  ESP.restart(); // Restart ESP32 to apply the update
+  ESP.restart();  // Restart ESP32 to apply the update
 }
