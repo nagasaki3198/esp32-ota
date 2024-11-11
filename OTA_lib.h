@@ -3,17 +3,16 @@
 #include <Update.h>
 #include <HTTPClient.h>
 
-HTTPClient http;
 
-String baseUrl = "https://raw.githubusercontent.com/nagasaki3198/esp32-ota/DEV/firmware/";
-String fwUrl = "esp32-ota.ino.bin";
+String baseUrl = "https://raw.githubusercontent.com/nagasaki3198/esp32-ota/DEV/firmware/esp32-ota.ino.bin";
 
 bool downloadFirmware() {
+  HTTPClient http;
   bool stat = false;
-  Serial.println(baseUrl + fwUrl);
+  Serial.println(baseUrl);
   File f = SPIFFS.open("/update.bin", "w");
   if (f) {
-    http.begin(baseUrl + fwUrl);
+    http.begin(baseUrl);
     int httpCode = http.GET();
     if (httpCode > 0) {
       if (httpCode == HTTP_CODE_OK) {
@@ -24,11 +23,11 @@ bool downloadFirmware() {
     } else {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
+    http.end();
     f.close();
   } else {
     Serial.println("failed to open /update.bin");
   }
-  http.end();
   return stat;
 }
 
